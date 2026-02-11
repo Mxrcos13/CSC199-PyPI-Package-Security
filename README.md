@@ -43,8 +43,7 @@ This project was completed as part of CSC199 coursework at California State Univ
 
 ### Finding Packages
 
-1. Go to https://hugovk.github.io/top-pypi-packages/
-2. Look for packages that wrap CLI tools
+Go to https://hugovk.github.io/top-pypi-packages/
 
 ### Searching for Vulnerabilities
 
@@ -58,13 +57,6 @@ sanitize
 whitelist
 blacklist
 ```
-
-### Questions to Ask
-
-1. Does user input reach subprocess calls?
-2. Is `shell=True` used?
-3. Is input validated or sanitized?
-4. Does the wrapped CLI tool have dangerous options?
 
 ---
 
@@ -82,7 +74,6 @@ blacklist
 
 ## Tools Used
 
-- **Environment:** Ubuntu VM
 - **Static Analysis:** Manual code review, GitHub search
 - **Package Discovery:** https://hugovk.github.io/top-pypi-packages/
 
