@@ -2,108 +2,101 @@
 
 ## Overview
 
-This project focuses on vulnerability research and exploit development in the PyPI ecosystem. The goal is to identify and document command injection vulnerabilities in Python packages through systematic security auditing.
+Systematic security audit of the Python Package Index (PyPI) ecosystem, targeting command injection vulnerabilities (CWE-78). Conducted as independent study CSC199 at California State University, Sacramento.
 
-This project was completed as part of CSC199 coursework at California State University, Sacramento under Professor Daniel Hammon.
-
----
-
-## Objectives
-
-- Identify and document command injection vulnerabilities in PyPI packages
-- Develop proof-of-concept exploits for discovered vulnerabilities
-- Practice responsible disclosure to package maintainers
-- Contribute to software supply chain security
+Approximately 185 packages were reviewed using a custom-built static analysis scanner and a four-phase manual methodology. The primary finding is an unpatched, high-severity command injection vulnerability in Luigi's SGE workflow module (CVSS 7.8), responsibly disclosed to Spotify.
 
 ---
 
 ## Methodology
 
-### 1. Reconnaissance
-- Find candidate packages using https://hugovk.github.io/top-pypi-packages/
-- Focus on packages that wrap command-line tools
-- Review documentation and analyze dependencies
+1. **Reconnaissance** — identify candidate packages via download rankings and documentation review; prioritize packages that wrap subprocess calls around user-configured parameters
+2. **Static Analysis** — trace data flow from user-controlled sources (`luigi.Parameter()`, `input()`, filesystem filenames) to dangerous sinks (`shell=True`, `os.system`)
+3. **Dynamic Analysis** — confirm injection by crafting malicious inputs and verifying execution in an isolated environment
+4. **Exploit Development** — write a minimal proof-of-concept demonstrating the full attack chain
 
-### 2. Static Analysis
-- Search for dangerous patterns: `subprocess`, `shell=True`, `os.system`
-- Check for input validation: `sanitize`, `whitelist`, `blacklist`
-- Review the wrapped tool's documentation for dangerous options
+See `Reports/luigi_sge_command_injection_report.md` for the full vulnerability audit report.
 
-### 3. Dynamic Analysis
-- Craft malicious inputs
-- Test exploitation in isolated environment
+---
 
-### 4. Exploit Development
-- Create proof-of-concept if vulnerability is confirmed
-- Document reproduction steps
+## Repository Structure
+
+```
+├── scan_script/
+│   ├── scanner.py           # Automated static analysis tool (downloads + regex-scans PyPI packages)
+│   ├── packages.txt         # Bulk package list (round 1)
+│   ├── targets_round2.txt   # Categorized targets (round 2)
+│   └── targets_round4.txt   # Categorized targets (round 4)
+├── findings/
+│   ├── luigi.md             # Primary finding: command injection (CVSS 7.8 High)
+│   ├── watchdog.md          # Independent re-discovery (patched PR #1164, Mar 2026)
+│   └── pdfkit.md            # Investigated: dropped (attack requires controlling app code)
+├── poc/
+│   ├── luigi_sge_poc.py     # Working PoC — Luigi SGE command injection
+│   └── watchdog_poc.py      # Working PoC — Watchdog filename injection
+├── test_scripts/            # Dynamic analysis scripts used during research
+│   ├── test_subprocess.py   # Basic shell=True behavior
+│   ├── test_subprocess2.py  # Semicolon metacharacter interpretation
+│   ├── test_subprocess3.py  # Luigi-style parallel_env injection pattern
+│   ├── test_luigi.py        # Luigi task runner tests
+│   ├── test_sge_cli.py      # CLI-based SGE injection demonstration
+│   └── luigi.cfg            # Config file for SGE injection via luigi.cfg
+├── Reports/
+│   ├── luigi_sge_command_injection_report.md  # Full vulnerability audit report (sent to Spotify)
+│   ├── project_summary.md                    # One-paragraph executive summary
+│   └── disclosure_record.md                  # Record of all disclosure attempts
+└── Notes/                   # Research notes (Obsidian vault)
+```
+
+---
+
+## Findings
+
+| Package | Status | CVSS | Vulnerability | Details |
+|---|---|---|---|---|
+| Luigi (Spotify) | **Unpatched** | 7.8 High | Command injection via `parallel_env` in `sge.py` | [findings/luigi.md](findings/luigi.md) |
+| Watchdog | Patched (PR #1164, Mar 2026) | 7.8 High | Filename injection via `ShellCommandTrick` | [findings/watchdog.md](findings/watchdog.md) |
+| PDFKit | Dropped | — | Option injection into `wkhtmltopdf` (requires controlling app code) | [findings/pdfkit.md](findings/pdfkit.md) |
+
+---
+
+## Responsible Disclosure
+
+| Package | Channels Attempted | Outcome |
+|---|---|---|
+| Luigi (Spotify) | HackerOne, GitHub issue, direct email | No response on any channel; vulnerability unpatched in latest release (3.7.3) |
+| Watchdog | Pre-disclosure research only | Already patched before submission; not filed to avoid duplicate |
+
+Full disclosure record: [Reports/disclosure_record.md](Reports/disclosure_record.md)
 
 ---
 
 ## Reconnaissance Process
 
-### Finding Packages
+**Finding packages:** [https://hugovk.github.io/top-pypi-packages/](https://hugovk.github.io/top-pypi-packages/) — sort by downloads, filter for packages that wrap CLI tools or spawn subprocesses.
 
-Go to https://hugovk.github.io/top-pypi-packages/
-
-### Searching for Vulnerabilities
-
-On GitHub, search the repo for:
+**GitHub search patterns:**
 ```
 subprocess
 shell=True
 os.system
 os.popen
 sanitize
-whitelist
-blacklist
-```
-
----
-
-## Repository Structure
-```
-├── README.md
-├── RECON.md                    # Reconnaissance process guide
-├── findings/
-│   └── [package_name].md       # Documented findings
-└── poc/
-    └── [package_name]_poc.py   # Proof of concept exploits
+shlex
 ```
 
 ---
 
 ## Tools Used
 
-- **Static Analysis:** Manual code review, GitHub search
-- **Package Discovery:** https://hugovk.github.io/top-pypi-packages/
-
----
-
-## Findings
-
-| Package | Status        | Type             | Details                    |
-| ------- | ------------- | ---------------- | -------------------------- |
-| pdfkit  | Investigating | Option Injection | [Link](findings/pdfkit.md) |
-
----
-
-## Responsible Disclosure
-
-All vulnerabilities will be reported following responsible disclosure practices:
-1. Contact package maintainers privately
-2. Provide technical details and reproduction steps
-3. Allow time for fix before public disclosure
-4. Submit CVE request if applicable
+- **Static Analysis:** `scan_script/scanner.py` (custom-built) + manual code review
+- **Package Discovery:** [https://hugovk.github.io/top-pypi-packages/](https://hugovk.github.io/top-pypi-packages/), GitHub search
 
 ---
 
 ## Author
 
-Marcos Pantoja  
+Marcos Pantoja
 Computer Science, California State University, Sacramento
 
----
-
-## Acknowledgments
-
-Professor Daniel Hammon - Project Advisor
+Professor Daniel Hammon — Project Advisor

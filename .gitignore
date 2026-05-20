@@ -1,2 +1,8 @@
 # Obsidian
 .obsidian/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo

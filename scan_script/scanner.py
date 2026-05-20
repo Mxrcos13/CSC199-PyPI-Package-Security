@@ -19,14 +19,68 @@ SINK_PATTERNS = [
     r'os\.popen\s*\(',
 ]
 
-# User input source patterns
-SOURCE_PATTERNS = [
-    r'sys\.argv',
-    r'request\.',
-    r'input\s*\(',
-    r'args\.',
-    r'Parameter\s*\(',
+# Source pattern categories — each is (label, [patterns])
+SOURCE_CATEGORIES = [
+    ('CLI/USER INPUT', [
+        r'sys\.argv',
+        r'\binput\s*\(',
+        r'\bargs\.',
+        r'Parameter\s*\(',
+        r'argparse',
+        r'optparse',
+        r'click\.argument',
+        r'click\.option',
+    ]),
+    ('FILESYSTEM PATH', [
+        r'os\.walk\s*\(',
+        r'os\.listdir\s*\(',
+        r'os\.scandir\s*\(',
+        r'glob\.glob\s*\(',
+        r'glob\.iglob\s*\(',
+        r'\.src_path',
+        r'\.dest_path',
+        r'\.filename',
+        r'\.filepath',
+        r'event\.src',
+        r'pathlib',
+        r'Path\s*\(',
+    ]),
+    ('ENVIRONMENT VAR', [
+        r'os\.environ',
+        r'os\.getenv\s*\(',
+        r'environ\.get\s*\(',
+    ]),
+    ('NETWORK/REQUEST', [
+        r'request\.',
+        r'requests\.get',
+        r'urllib',
+        r'socket\.',
+        r'\.recv\s*\(',
+        r'flask',
+        r'django',
+        r'fastapi',
+    ]),
+    ('TEMPLATE SUBSTITUTION', [
+        r'safe_substitute',
+        r'Template\s*\(',
+        r'\.format\s*\(',
+        r'f".*{',
+        r"f'.*{",
+        r'%\s*\(',
+    ]),
+    ('FILE METADATA', [
+        r'\.tag\b',
+        r'\.tags\b',
+        r'ID3\s*\(',
+        r'mutagen',
+        r'exif',
+        r'metadata',
+        r'EasyID3',
+    ]),
 ]
+
+# Flatten for quick "has any source" check
+SOURCE_PATTERNS = [p for _, patterns in SOURCE_CATEGORIES for p in patterns]
 
 def load_packages(filepath):
     """Load package names from a text file (one per line)."""
@@ -72,20 +126,25 @@ def scan_file(filepath):
         return None
 
     has_sink = any(re.search(p, content) for p in SINK_PATTERNS)
-    has_source = any(re.search(p, content) for p in SOURCE_PATTERNS)
+    if not has_sink:
+        return None
 
-    if has_sink:
-        findings = []
-        for i, line in enumerate(content.split('\n'), 1):
-            for p in SINK_PATTERNS:
-                if re.search(p, line):
-                    findings.append({
-                        'line': i,
-                        'code': line.strip()[:100],
-                        'has_source': has_source
-                    })
-        return findings
-    return None
+    # Find which source categories matched
+    matched_sources = []
+    for label, patterns in SOURCE_CATEGORIES:
+        if any(re.search(p, content) for p in patterns):
+            matched_sources.append(label)
+
+    findings = []
+    for i, line in enumerate(content.split('\n'), 1):
+        for p in SINK_PATTERNS:
+            if re.search(p, line):
+                findings.append({
+                    'line': i,
+                    'code': line.strip()[:100],
+                    'sources': matched_sources,
+                })
+    return findings
 
 def scan_package(pkg_dir):
     results = []
@@ -134,8 +193,8 @@ def main():
                 if results:
                     for r in results:
                         for f in r['findings']:
-                            if f['has_source']:
-                                print(f"    SOURCE + SINK FOUND!")
+                            if f['sources']:
+                                print(f"    [{', '.join(f['sources'])}] + SINK FOUND!")
                             else:
                                 print(f"     SINK ONLY")
                             print(f"     File: {r['file']}")

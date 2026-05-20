@@ -1,0 +1,108 @@
+# Round 4 scan targets — DevOps/CI, build tools, data pipeline, file processing
+# Focus: shell=True + user-controlled sources (CLI args, filenames, env vars, config)
+
+# DevOps / CI / process execution
+plumbum
+sh
+pexpect
+fabric
+invoke
+paramiko
+envoy
+sarge
+delegator.py
+pbs
+subprocesses
+shellingham
+click-subprocess
+doit
+pyinvoke
+execnet
+remoto
+asyncssh
+sshtunnel
+parallel-ssh
+nornir
+mitogen
+
+# Build / packaging tools
+tox
+nox
+hatch
+flit
+build
+meson-python
+scikit-build
+scikit-build-core
+cmake
+ninja
+scons
+waf
+pyproject-hooks
+hatchling
+pdm
+poetry-core
+
+# Data pipeline / workflow
+prefect
+airflow
+apache-airflow
+dagster
+kedro
+metaflow
+zenml
+dask
+ray
+celery
+dramatiq
+rq
+huey
+apscheduler
+luigi
+
+# File / media processing
+mutagen
+imageio
+audioread
+pydub
+moviepy
+ffmpy
+ffmpeg-python
+Pillow
+wand
+rawpy
+exifread
+pyexiftool
+pymediainfo
+tinytag
+
+# Infrastructure / cloud automation
+ansible
+ansible-runner
+saltstack
+pyinfra
+napalm
+netmiko
+ciscoconfparse
+scrapli
+ncclient
+
+# Testing / fuzzing infrastructure
+pytest-subprocess
+pytest-shell-utilities
+testcontainers
+responses
+httpretty
+
+# Source control / SCM
+gitpython
+dulwich
+pygit2
+mercurial
+
+# Compression / archive handling
+patool
+zipfile36
+py7zr
+rarfile
+libarchive-c

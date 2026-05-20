@@ -1,0 +1,191 @@
+# Round 2 — Expanded high-probability targets
+# ─── Task runners / build tools ───────────────────────────────────────────────
+poethepoet
+invoke
+fabric
+plumbum
+nox
+tox
+scons
+doit
+pyinvoke
+hatch
+pdm
+flit
+
+# ─── Shell / subprocess wrappers ──────────────────────────────────────────────
+sh
+pexpect
+sarge
+delegator.py
+xonsh
+cmd2
+envoy
+
+# ─── C/C++ / cross-language build ─────────────────────────────────────────────
+conan
+cmake
+ninja
+meson
+
+# ─── Patch / diff / VCS tools ─────────────────────────────────────────────────
+patch-ng
+gitpython
+dulwich
+gitlint
+pre-commit
+unidiff
+
+# ─── Package / environment management ─────────────────────────────────────────
+pipx
+pip-tools
+virtualenv
+pipenv
+
+# ─── CI / CD / deployment ─────────────────────────────────────────────────────
+ansible
+salt
+fabric3
+capistrano-like
+dployment
+
+# ─── Workflow / data pipeline ─────────────────────────────────────────────────
+apache-airflow-providers-oracle
+dagster-cloud
+prefect
+metaflow
+kedro
+dvc
+mlflow
+bentoml
+ray
+
+# ─── Security / audit tools ───────────────────────────────────────────────────
+bandit
+safety
+pip-audit
+cloudsplaining
+semgrep
+trufflehog
+
+# ─── Network / remote access ──────────────────────────────────────────────────
+paramiko
+pysmb
+pysftp
+netifaces
+pycurl
+impacket
+scapy
+netmiko
+
+# ─── Web scraping / downloading ───────────────────────────────────────────────
+instaloader
+scrapy
+yt-dlp
+gallery-dl
+spotdl
+mechanize
+
+# ─── Browser / GUI automation ─────────────────────────────────────────────────
+selenium
+playwright
+pyppeteer
+pyautogui
+pywinauto
+
+# ─── Media / file processing ──────────────────────────────────────────────────
+ffmpeg-python
+pydub
+moviepy
+wand
+imageio
+mutagen
+beets
+mss
+screeninfo
+
+# ─── Documentation builders ───────────────────────────────────────────────────
+sphinx
+mkdocs
+mkdocs-macros-plugin
+mkdocs-monorepo-plugin
+pelican
+nikola
+lektor
+
+# ─── Template / macro processing ──────────────────────────────────────────────
+jinja2-simple-tags
+jinja2-sandbox
+cookiecutter
+copier
+cruft
+
+# ─── Static analysis / code quality ──────────────────────────────────────────
+pylint
+mypy
+pytype
+coverage
+autopep8
+yapf
+isort
+usort
+black
+ruff
+
+# ─── Testing helpers that spawn processes ────────────────────────────────────
+pytest-xprocess
+pytest-subprocess
+testpath
+xprocess
+
+# ─── Database / ORM / migrations ─────────────────────────────────────────────
+alembic
+sqlfluff
+sqlfluff-templater-dbt
+yoyo-migrations
+peewee
+
+# ─── Cloud / infra SDKs ───────────────────────────────────────────────────────
+awscli
+azure-cli-core
+google-cloud-storage
+policy-sentry
+cloudsplaining
+
+# ─── Misc system-level packages ──────────────────────────────────────────────
+psutil
+distro
+pywin32
+pyxattr
+python-magic
+zipimport
+patch
+filelock
+lockfile
+portalocker
+watchfiles
+watchgod
+inotify
+pyinotify
+pystemd
+systemd-python
+dbus-python
+pyudev
+pyserial
+pyusb
+
+# ─── From original packages.txt (not yet deeply investigated) ─────────────────
+conan
+patch-ng
+instaloader
+mkdocs-macros-plugin
+netifaces
+pysmb
+mss
+screeninfo
+usort
+sqlfluff-templater-dbt
+apache-airflow-providers-oracle
+dagster-cloud
+poethepoet
+cloudsplaining
